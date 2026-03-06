@@ -6,12 +6,15 @@ import interact
 
 
 # PARAMETERS
-n = 5
+n = 8
 dt = 0.1
-scenario = 1   # 1–7
+scenario = 6   # 1–7
+sparsity = 50
+hide_edges = False
+random_delete = True
 
-#positions = interact.random_positions(n)
-positions = interact.custom_positions()
+positions = interact.random_positions(n)
+#positions = interact.custom_positions()
 n = positions.shape[0]
 errors = []
 
@@ -44,7 +47,7 @@ elif scenario == 5:
     title = "Malicious Agent"
 
 elif scenario == 6:
-    A = g.random_graph(n, 30)
+    A = g.random_graph(n, sparsity)
     title = "Sparse Random Graph"
 
 elif scenario == 7:
@@ -131,15 +134,33 @@ def draw_edges():
 
                 lines.append(line)
 
+if not hide_edges:
+    draw_edges()
 
-draw_edges()
+
+def randomly_edge_delete(A,prob = 0.3):
+    n = A.shape[0]
+    for i in range(n):
+        for j in range(i+1,n):
+
+            if A[i,j] == 1 and np.random.rand() < prob:
+
+                A[i,j] = 0
+                A[j,i] = 0
+
+    L = compute_laplacian(A)
+    return L
 
 
 # UPDATE FUNCTION
 
 def update(frame):
 
-    global positions
+    global positions, L
+
+    if frame % 10 == 0 and random_delete:
+        print(f"Deleting edges at frame {frame}")
+        L = randomly_edge_delete(A, prob=0.2)
 
     dx = -L @ positions
 
@@ -156,7 +177,8 @@ def update(frame):
 
     scat.set_offsets(positions)
 
-    draw_edges()
+    if not hide_edges:
+        draw_edges()
 
 
     # AUTO SCALE AGENT AXIS
@@ -191,7 +213,7 @@ def update(frame):
     return scat,line_error,*lines
 
 
-ani = FuncAnimation(fig,update,frames=50,interval=500)
+ani = FuncAnimation(fig,update,frames=100,interval=500)
 
 plt.suptitle(title)
 

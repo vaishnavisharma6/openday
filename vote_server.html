@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Guess the Number of Clusters</h2>
+
+Player Name:<br>
+<input id="player"><br><br>
+
+<button onclick="vote(1)">1</button>
+<button onclick="vote(2)">2</button>
+<button onclick="vote(3)">3</button>
+<button onclick="vote(4)">4</button>
+
+<script>
+
+let locked = false
+
+function vote(ans){
+
+if(locked) return
+
+let player = document.getElementById("player").value
+
+fetch("/vote",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({player:player,answer:ans})
+})
+
+locked=true
+
+alert("Answer submitted!")
+
+}
+
+</script>
+
+</body>
+</html>

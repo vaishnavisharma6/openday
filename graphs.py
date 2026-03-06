@@ -1,5 +1,19 @@
 import numpy as np
 
+def convex_polygon_graph(n):
+    """
+    Create a convex polygon (cycle) graph with n nodes.
+    Each node connects to its two neighbors.
+    """
+
+    A = np.zeros((n, n))
+
+    for i in range(n):
+        j = (i + 1) % n
+        A[i, j] = 1
+        A[j, i] = 1
+
+    return A
 
 def random_graph(n, sparsity_percent):
     """
