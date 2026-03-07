@@ -1,42 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import graphs as g
+import interact
 
 
 # PARAMETERS
-n = 5
-dt = 0.03
-scenario = 5   # 1–5
+n = 8
+dt = 0.1
+scenario = 6   # 1–7
+sparsity = 50
+hide_edges = False
+random_delete = True
 
-
-positions = 6*np.random.uniform(-60,60,(n,2))
+positions = interact.random_positions(n)
+#positions = interact.custom_positions()
+n = positions.shape[0]
 errors = []
-
-
-# GRAPH DEFINITIONS
-
-def fully_connected(n):
-    return np.ones((n,n)) - np.eye(n)
-
-def chain_graph(n):
-    A = np.zeros((n,n))
-    for i in range(n-1):
-        A[i,i+1] = 1
-        A[i+1,i] = 1
-    return A
-
-def disconnected_graph(n):
-    A = np.zeros((n,n))
-
-    for i in range(n//2 - 1):
-        A[i,i+1] = 1
-        A[i+1,i] = 1
-
-    for i in range(n//2,n-1):
-        A[i,i+1] = 1
-        A[i+1,i] = 1
-
-    return A
 
 
 def compute_laplacian(A):
@@ -47,26 +27,34 @@ def compute_laplacian(A):
 # SCENARIO SELECTION
 
 if scenario == 1:
-    A = fully_connected(n)
+    A = g.fully_connected(n)
     title = "Fully Connected Graph"
 
 elif scenario == 2:
-    A = chain_graph(n)
+    A = g.chain_graph(n)
     title = "Sparse Chain Graph"
 
 elif scenario == 3:
-    A = disconnected_graph(n)
+    A = g.disconnected_graph(n)
     title = "Disconnected Graph"
 
 elif scenario == 4:
-    A = fully_connected(n)
+    A = g.fully_connected(n)
     title = "Consensus with Noise"
 
 elif scenario == 5:
-    A = fully_connected(n)
+    A = g.fully_connected(n)
     title = "Malicious Agent"
 
+elif scenario == 6:
+    A = g.random_graph(n, sparsity)
+    title = "Sparse Random Graph"
 
+elif scenario == 7:
+    A = g.custom_graph()
+    title = "Custom Graph"
+
+assert A.shape[0] == positions.shape[0], "Graph Structure Mismatch"
 L = compute_laplacian(A)
 
 
@@ -116,7 +104,7 @@ ax3.set_title("Consensus Error")
 ax3.set_xlabel("Time")
 ax3.set_ylabel("Error")
 
-ax3.set_yscale("log")
+#ax3.set_yscale("log")
 
 ax3.grid(True)
 
@@ -146,15 +134,33 @@ def draw_edges():
 
                 lines.append(line)
 
+if not hide_edges:
+    draw_edges()
 
-draw_edges()
+
+def randomly_edge_delete(A,prob = 0.3):
+    n = A.shape[0]
+    for i in range(n):
+        for j in range(i+1,n):
+
+            if A[i,j] == 1 and np.random.rand() < prob:
+
+                A[i,j] = 0
+                A[j,i] = 0
+
+    L = compute_laplacian(A)
+    return L
 
 
 # UPDATE FUNCTION
 
 def update(frame):
 
-    global positions
+    global positions, L
+
+    if frame % 10 == 0 and random_delete:
+        print(f"Deleting edges at frame {frame}")
+        L = randomly_edge_delete(A, prob=0.2)
 
     dx = -L @ positions
 
@@ -171,7 +177,8 @@ def update(frame):
 
     scat.set_offsets(positions)
 
-    draw_edges()
+    if not hide_edges:
+        draw_edges()
 
 
     # AUTO SCALE AGENT AXIS
@@ -206,7 +213,7 @@ def update(frame):
     return scat,line_error,*lines
 
 
-ani = FuncAnimation(fig,update,frames=500,interval=500)
+ani = FuncAnimation(fig,update,frames=100,interval=500)
 
 plt.suptitle(title)
 
